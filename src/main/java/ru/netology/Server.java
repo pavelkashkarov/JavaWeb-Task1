@@ -6,7 +6,6 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -82,7 +81,7 @@ public class Server {
 
                 Request request = new Request(requestLine, headers);
                 request.setBody(getBody(request, in));
-                request.setQueryParams(getQueryParams(requestLine.getPath()));
+                request.setPostParams(getPostParams(request));
 
                 runHandler(request, out);
             } catch (IOException | URISyntaxException e) {
@@ -148,8 +147,18 @@ public class Server {
             return null;
         }
 
-        private List<NameValuePair> getQueryParams(String path) throws URISyntaxException {
-            return URLEncodedUtils.parse(new URI(path), StandardCharsets.UTF_8);
+        private List<NameValuePair> getPostParams(Request request) {
+            // для GET тело МОЖЕТ быть, но общепринято его игнорировать
+            if (!request.getRequestLine().getMethod().equals("GET")) {
+                final Optional<String> contentType = request.getHeader("Content-Type");
+                if (contentType.isPresent()) {
+                    final String type = contentType.get();
+                    if (type.equals("application/x-www-form-urlencoded")) {
+                        return URLEncodedUtils.parse(request.getBody(), StandardCharsets.UTF_8);
+                    }
+                }
+            }
+            return null;
         }
 
         private void runHandler(Request request, BufferedOutputStream out) throws IOException {

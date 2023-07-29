@@ -3,6 +3,7 @@ package ru.netology;
 import org.apache.http.NameValuePair;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class Request {
@@ -11,6 +12,7 @@ public class Request {
     private final List<String> headers;
     private String body;
     private List<NameValuePair> queryParams;
+    private List<NameValuePair> postParams;
 
     public Request(RequestLine requestLine, List<String> headers) {
         this.requestLine = requestLine;
@@ -21,6 +23,14 @@ public class Request {
         this.requestLine = requestLine;
         this.headers = headers;
         this.body = body;
+    }
+
+    public Optional<String> getHeader(String header) {
+        return headers.stream()
+                .filter(o -> o.startsWith(header))
+                .map(o -> o.substring(o.indexOf(" ")))
+                .map(String::trim)
+                .findFirst();
     }
 
     public RequestLine getRequestLine() {
@@ -39,15 +49,31 @@ public class Request {
         this.body = body;
     }
 
-    public List<String> getQueryParam(String name) {
-        return queryParams.stream()
+    private List<String> getParam(List<NameValuePair> params, String name) {
+        return params.stream()
                 .filter(o -> o.getName().startsWith(name))
                 .map(NameValuePair::getValue)
                 .collect(Collectors.toList());
     }
 
+    public List<String> getQueryParam(String name) {
+        return getParam(queryParams, name);
+    }
+
     public List<NameValuePair> getQueryParams() {
         return queryParams;
+    }
+
+    public void setPostParams(List<NameValuePair> postParams) {
+        this.postParams = postParams;
+    }
+
+    public List<String> getPostParam(String name) {
+        return getParam(postParams, name);
+    }
+
+    public List<NameValuePair> getPostParams() {
+        return postParams;
     }
 
     public void setQueryParams(List<NameValuePair> queryParams) {
